@@ -29,7 +29,10 @@ let UserType = new GraphQLObjectType({
         },
         name: {
             type: GraphQLString,
-            resolve: (user) => user.firstName + ' ' + user.lastName
+            resolve: (user) => `${user.firstName} ${user.lastName}`
+        },
+        interests: {
+            type: new GraphQLList(GraphQLString)
         }
     })
 });
