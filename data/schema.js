@@ -1,7 +1,7 @@
+import fs from 'fs';
+import path from 'path';
+
 import {
-    GraphQLBoolean,
-    GraphQLFloat,
-    GraphQLID,
     GraphQLInt,
     GraphQLList,
     GraphQLNonNull,
@@ -10,9 +10,7 @@ import {
     GraphQLString,
 } from 'graphql';
 
-import {
-    users
-} from './database';
+let usersFile = path.join(__dirname, 'users.json');
 
 let UserType = new GraphQLObjectType({
     name: 'User',
@@ -47,17 +45,63 @@ let QueryType = new GraphQLObjectType({
                     type: new GraphQLNonNull(GraphQLInt)
                 }
             },
-            resolve: (_, args) => users[args.id] || null
+            resolve: (_, args) => {
+                let users = JSON.parse(fs.readFileSync(usersFile, 'utf8'));
+                return users[args.id] || null;
+            }
         }
     })
 });
 
 
 let schema = new GraphQLSchema({
-    query: QueryType
+    query: QueryType,
+    mutation: new GraphQLObjectType({
+        name: 'Mutation',
+        fields: () => ({
+            insertOrUpdateUser: {
+                type: UserType,
+                args: {
+                    id: {
+                        type: GraphQLInt,
+                    },
+                    firstName: {
+                        type: GraphQLString
+                    },
+                    lastName:  {
+                        type: GraphQLString
+                    },
+                    interests: {
+                        type: new GraphQLList(GraphQLString)
+                    }
+                },
+                resolve: (_, {id, firstName, lastName, interests}) => {
+                    let users = JSON.parse(fs.readFileSync(usersFile, 'utf8'));
 
-    // Uncomment the following after adding some mutation fields:
-    // mutation: mutationType
+                    // if no id passed, we're doing an insert
+                    if (!id) {
+                        id = Math.max(Object.keys(users)) + 1;
+                    }
+
+                    if (firstName) {
+                        users[id].firstName = firstName;
+                    }
+
+                    if (lastName) {
+                        users[id].lastName = lastName;
+                    }
+
+                    if (interests) {
+                        users[id].interests = interests;
+                    }
+
+                    fs.writeFileSync(usersFile, JSON.stringify(users, null, 2)); // pretty print
+
+                    return users[id];
+                }
+            }
+        })
+    })
 });
 
 export {
