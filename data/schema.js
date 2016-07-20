@@ -80,7 +80,11 @@ let schema = new GraphQLSchema({
 
                     // if no id passed, we're doing an insert
                     if (!id) {
-                        id = Math.max(...Object.keys(users)) + 1;
+                        let userIds = Object.keys(users);
+                        id = Math.max(...userIds) + 1;
+                    }
+
+                    if (!users[id]) {
                         users[id] = {
                             id
                         };
